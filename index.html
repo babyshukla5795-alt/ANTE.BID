@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ante — Put up the price, take the rank</title>
+<meta name="description" content="A public leaderboard where rank is set entirely by what you pay. Claim your spot starting at $5.">
+<meta name="theme-color" content="#12162B">
+<meta property="og:title" content="Ante — Put up the price, take the rank">
+<meta property="og:description" content="A public leaderboard where rank is set entirely by what you pay. Claim your spot starting at $5.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12162B;
+    --bg-raised: #1B2140;
+    --line: #2E3560;
+    --text: #F1EEE4;
+    --text-dim: #A9AAC4;
+    --gold: #C9A227;
+    --gold-bright: #E4BE45;
+    --crimson: #C1443C;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Fraunces', Georgia, serif;
+    line-height: 1.5;
+  }
+  a{ color: inherit; }
+  .mono{ font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+
+  /* header */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    max-width: 960px; margin: 0 auto; padding: 28px 24px 0;
+  }
+  .logo{ font-weight: 700; font-size: 1.4rem; letter-spacing: 0.01em; text-decoration:none; }
+  .logo span{ color: var(--gold-bright); }
+  header nav a{
+    text-decoration:none; color: var(--text-dim); font-size: 0.95rem; margin-left: 22px;
+  }
+  header nav a.cta{
+    color: var(--bg); background: var(--gold-bright); padding: 9px 18px; border-radius: 3px;
+    font-weight: 600;
+  }
+  header nav a.cta:hover{ background: #f0cd5c; }
+
+  /* hero */
+  .hero{ max-width: 720px; margin: 0 auto; padding: 64px 24px 32px; text-align: center; }
+  .hero p.kicker{ color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; margin: 0 0 18px; }
+  .hero h1{ font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 600; margin: 0 0 20px; line-height: 1.15; }
+  .hero .price-line{ font-size: clamp(2.6rem, 9vw, 4.6rem); font-weight: 900; color: var(--gold-bright); margin: 6px 0; }
+  .hero .price-line small{ display:block; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 1rem; color: var(--text-dim); margin-top: 10px; }
+  .hero .sub{ color: var(--text-dim); max-width: 480px; margin: 18px auto 0; font-size: 1.02rem; }
+
+  /* podium */
+  .podium-wrap{ max-width: 720px; margin: 0 auto; padding: 20px 24px 8px; }
+  .podium{ display:flex; align-items:flex-end; justify-content:center; gap: 14px; }
+  .podium .block{
+    flex: 1; max-width: 220px; background: var(--bg-raised); border: 1px solid var(--line);
+    border-radius: 6px 6px 0 0; padding: 18px 14px 20px; text-align:center; position:relative;
+  }
+  .podium .block.rank-1{ padding-top: 30px; border-color: var(--gold); box-shadow: 0 0 0 1px rgba(201,162,39,0.25); }
+  .podium .block.rank-2{ margin-bottom: -22px; }
+  .podium .block.rank-3{ margin-bottom: -38px; }
+  .podium .rank-tag{ font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--text-dim); }
+  .podium .rank-1 .rank-tag{ color: var(--gold-bright); }
+  .podium .name{ font-weight: 600; font-size: 1.05rem; margin: 8px 0 4px; word-break: break-word; }
+  .podium .amt{ font-family: 'IBM Plex Mono', monospace; color: var(--gold-bright); font-size: 1.15rem; }
+  .podium .block a.visit{ display:block; margin-top:8px; font-size:0.82rem; color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* board */
+  .board-wrap{ max-width: 720px; margin: 46px auto 0; padding: 0 24px; }
+  .board-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 14px; }
+  .board-head h2{ font-size: 1.2rem; font-weight: 600; margin: 0; }
+  .tabs{ display:flex; gap: 4px; background: var(--bg-raised); border: 1px solid var(--line); border-radius: 20px; padding: 3px; }
+  .tabs button{
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; border: none; background: transparent;
+    color: var(--text-dim); padding: 6px 14px; border-radius: 16px; cursor: pointer;
+  }
+  .tabs button[aria-pressed="true"]{ background: var(--gold); color: var(--bg); }
+
+  .row{
+    display:grid; grid-template-columns: 40px 1fr auto auto; gap: 14px; align-items: center;
+    padding: 14px 4px; border-bottom: 1px solid var(--line);
+  }
+  .row .rank{ font-family: 'IBM Plex Mono', monospace; color: var(--text-dim); }
+  .row .info a{ font-weight: 600; text-decoration: none; }
+  .row .info a:hover{ text-decoration: underline; }
+  .row .info .url{ display:block; font-size: 0.8rem; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-top:2px; }
+  .row .amt{ font-family: 'IBM Plex Mono', monospace; color: var(--gold-bright); }
+  .row .outbid-btn{
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; background: transparent;
+    color: var(--text-dim); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; cursor: pointer;
+  }
+  .row .outbid-btn:hover{ border-color: var(--crimson); color: var(--crimson); }
+  .row.fresh{ animation: flash 1.6s ease-out; }
+  @keyframes flash{ from{ background: rgba(201,162,39,0.18);} to{ background: transparent; } }
+
+  .empty{ text-align:center; padding: 40px 20px; color: var(--text-dim); }
+  .empty a{ color: var(--gold-bright); text-decoration: underline; }
+
+  /* form */
+  .form-wrap{ max-width: 560px; margin: 64px auto 0; padding: 0 24px; }
+  #bid-form{ background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px; padding: 28px; }
+  #bid-form h2{ margin-top:0; font-size: 1.25rem; font-weight: 600; }
+  #bid-form .rules{ color: var(--text-dim); font-size: 0.88rem; margin: 0 0 22px; }
+  .field{ margin-bottom: 16px; }
+  .field label{ display:block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace; }
+  .field input{
+    width:100%; background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+    color: var(--text); padding: 11px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.95rem;
+  }
+  .field input:focus-visible, button:focus-visible, a:focus-visible{
+    outline: 2px solid var(--gold-bright); outline-offset: 2px;
+  }
+  .field .hint{ font-size: 0.78rem; color: var(--text-dim); margin-top: 5px; }
+  .field .err{ font-size: 0.8rem; color: var(--crimson); margin-top: 5px; display:none; }
+  #submit-btn{
+    width:100%; background: var(--gold-bright); color: var(--bg); border: none; border-radius: 4px;
+    padding: 13px; font-weight: 600; font-family: 'Fraunces', serif; font-size: 1.02rem; cursor: pointer;
+  }
+  #submit-btn:hover{ background: #f0cd5c; }
+  #submit-btn:disabled{ opacity: 0.6; cursor: not-allowed; }
+
+  /* confirm modal */
+  .modal-backdrop{
+    position: fixed; inset: 0; background: rgba(8,10,20,0.7); display:none;
+    align-items:center; justify-content:center; padding: 20px; z-index: 20;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal{
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px;
+    max-width: 400px; width:100%; padding: 26px;
+  }
+  .modal h3{ margin-top:0; font-size: 1.1rem; }
+  .modal .demo-tag{
+    display:inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    color: var(--crimson); border: 1px solid var(--crimson); border-radius: 3px; padding: 2px 6px; margin-bottom: 14px;
+  }
+  .modal .line{ display:flex; justify-content:space-between; font-size: 0.92rem; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .modal .actions{ display:flex; gap: 10px; margin-top: 20px; }
+  .modal .actions button{
+    flex:1; padding: 11px; border-radius: 4px; border: none; cursor: pointer; font-family: 'Fraunces', serif; font-weight: 600;
+  }
+  .modal .cancel{ background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .modal .confirm{ background: var(--gold-bright); color: var(--bg); }
+
+  .toast{
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-raised); border: 1px solid var(--gold); color: var(--text);
+    padding: 12px 20px; border-radius: 6px; font-size: 0.9rem; opacity:0; transition: all 0.25s ease; z-index: 30;
+  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer{ max-width: 720px; margin: 70px auto 0; padding: 26px 24px 50px; border-top: 1px solid var(--line); }
+  footer h3{ font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+  footer ol{ color: var(--text-dim); font-size: 0.9rem; padding-left: 20px; }
+  footer ol li{ margin-bottom: 6px; }
+  footer .notice{ margin-top: 24px; font-size: 0.8rem; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+
+  @media (max-width: 560px){
+    .podium{ flex-wrap: nowrap; }
+    .row{ grid-template-columns: 30px 1fr auto; }
+    .row .outbid-btn{ grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+    header nav a{ margin-left: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#top">ante<span>.</span></a>
+  <nav>
+    <a href="#how">How it works</a>
+    <a class="cta" href="#claim">Claim a spot</a>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <p class="kicker">a public leaderboard, ranked by price</p>
+    <h1>Rank is not earned here. It's bought.</h1>
+    <div class="price-line" id="hero-price">$—
+      <small id="hero-sub">no bids yet — #1 is open</small>
+    </div>
+    <p class="sub">One page. One list. Whoever pays the most sits at the top, in full view, for as long as nobody pays more.</p>
+  </section>
+
+  <section class="podium-wrap" aria-label="Top three">
+    <div class="podium" id="podium"></div>
+  </section>
+
+  <section class="board-wrap" id="board">
+    <div class="board-head">
+      <h2>The board</h2>
+      <div class="tabs" role="tablist" aria-label="Board range">
+        <button id="tab-today" role="tab" aria-pressed="true">today</button>
+        <button id="tab-all" role="tab" aria-pressed="false">all-time</button>
+      </div>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section class="form-wrap" id="claim">
+    <form id="bid-form" novalidate>
+      <h2>Claim a spot</h2>
+      <p class="rules">Starting bid is $5. Higher amount, higher rank. Ties keep whoever bid first.</p>
+
+      <div class="field">
+        <label for="f-name">What are you ranking</label>
+        <input id="f-name" type="text" maxlength="60" placeholder="Your product or handle" required>
+        <div class="err" id="err-name">Enter a name.</div>
+      </div>
+
+      <div class="field">
+        <label for="f-url">Where it points</label>
+        <input id="f-url" type="url" placeholder="https://" required>
+        <div class="err" id="err-url">Enter a valid link, starting with https://</div>
+      </div>
+
+      <div class="field">
+        <label for="f-amount">Your bid (USD)</label>
+        <input id="f-amount" type="number" min="5" step="1" placeholder="5" required>
+        <div class="hint">$5 minimum.</div>
+        <div class="err" id="err-amount">Bid must be at least $5.</div>
+      </div>
+
+      <button type="submit" id="submit-btn">Review bid</button>
+    </form>
+  </section>
+
+  <footer id="how">
+    <h3>How it works</h3>
+    <ol>
+      <li>Submit a link and a bid. $5 minimum, no ceiling.</li>
+      <li>Rank is sorted by bid amount, highest first — nothing else.</li>
+      <li>The "today" board clears every 24 hours; "all-time" never does.</li>
+      <li>Anyone can retake a spot at any moment by bidding higher.</li>
+    </ol>
+    <p class="notice" id="mode-notice">Demo build — payment confirmation on this page is simulated, no card is charged.</p>
+  </footer>
+</main>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <span class="demo-tag">demo — no real charge</span>
+    <h3 id="modal-title">Confirm your bid</h3>
+    <div class="line"><span>Name</span><span id="m-name" class="mono"></span></div>
+    <div class="line"><span>Link</span><span id="m-url" class="mono"></span></div>
+    <div class="line"><span>Bid</span><span id="m-amount" class="mono"></span></div>
+    <div class="actions">
+      <button type="button" class="cancel" id="modal-cancel">Cancel</button>
+      <button type="button" class="confirm" id="modal-confirm">Pay &amp; publish</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'bids';
+  var hasWindowStorage = typeof window.storage !== 'undefined';
+  var LIVE = false; // true once we confirm a real /api backend is deployed and reachable
+
+  function loadBidsDemo(){
+    if (hasWindowStorage){
+      return window.storage.get(STORAGE_KEY, true).then(function(res){
+        if (!res) return [];
+        try { return JSON.parse(res.value) || []; } catch(e){ return []; }
+      }).catch(function(){ return []; });
+    }
+    try {
+      var raw = localStorage.getItem('ante-bids-demo');
+      return Promise.resolve(raw ? JSON.parse(raw) : []);
+    } catch(e){ return Promise.resolve([]); }
+  }
+
+  function saveBidsDemo(bids){
+    if (hasWindowStorage){
+      return window.storage.set(STORAGE_KEY, JSON.stringify(bids), true).catch(function(){ return null; });
+    }
+    try { localStorage.setItem('ante-bids-demo', JSON.stringify(bids)); } catch(e){}
+    return Promise.resolve(true);
+  }
+
+  // Tries the real backend first (present only once /api is deployed with Stripe
+  // + a database wired up). Falls back to the in-browser demo store otherwise —
+  // this is what runs here in the Claude preview, since there's no server behind it.
+  function loadBids(){
+    return fetch('/api/bids', { headers: { 'Accept': 'application/json' } })
+      .then(function(r){
+        if (!r.ok) throw new Error('no backend');
+        return r.json();
+      })
+      .then(function(data){
+        LIVE = true;
+        return data.bids || [];
+      })
+      .catch(function(){
+        LIVE = false;
+        return loadBidsDemo();
+      });
+  }
+
+  function uid(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'b-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+
+  function fmt(n){
+    return '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits:0});
+  }
+
+  function safeHost(url){
+    try { return new URL(url).hostname.replace(/^www\./,''); } catch(e){ return url; }
+  }
+
+  var state = { bids: [], range: 'today', freshId: null };
+
+  function visibleBids(){
+    var list = state.bids.slice();
+    if (state.range === 'today'){
+      var cutoff = Date.now() - 24*60*60*1000;
+      list = list.filter(function(b){ return b.ts >= cutoff; });
+    }
+    list.sort(function(a,b){ return b.amount - a.amount || a.ts - b.ts; });
+    return list;
+  }
+
+  function render(){
+    var list = visibleBids();
+    var podiumEl = document.getElementById('podium');
+    var listEl = document.getElementById('list');
+    var heroPrice = document.getElementById('hero-price');
+    var heroSub = document.getElementById('hero-sub');
+
+    podiumEl.innerHTML = '';
+    listEl.innerHTML = '';
+
+    if (list.length === 0){
+      heroPrice.childNodes[0].nodeValue = '$5';
+      heroSub.textContent = 'no bids yet — #1 is open';
+      listEl.innerHTML = '<div class="empty">Nobody has claimed a rank yet. <a href="#claim">Be the first — it only costs $5.</a></div>';
+      return;
+    }
+
+    heroPrice.childNodes[0].nodeValue = fmt(list[0].amount);
+    heroSub.textContent = 'currently buys #1' + (state.range === 'today' ? ' today' : ' all-time');
+
+    var top3 = list.slice(0,3);
+    var order = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
+    order.forEach(function(b){
+      if (!b) return;
+      var rank = list.indexOf(b) + 1;
+      var block = document.createElement('div');
+      block.className = 'block rank-' + rank;
+      var tag = document.createElement('div');
+      tag.className = 'rank-tag';
+      tag.textContent = '#' + rank;
+      var name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = b.name;
+      var amt = document.createElement('div');
+      amt.className = 'amt';
+      amt.textContent = fmt(b.amount);
+      var link = document.createElement('a');
+      link.className = 'visit';
+      link.href = b.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer nofollow';
+      link.textContent = safeHost(b.url);
+      block.appendChild(tag);
+      block.appendChild(name);
+      block.appendChild(amt);
+      block.appendChild(link);
+      podiumEl.appendChild(block);
+    });
+
+    list.slice(3).forEach(function(b, i){
+      var rank = i + 4;
+      var row = document.createElement('div');
+      row.className = 'row' + (b.id === state.freshId ? ' fresh' : '');
+      row.innerHTML =
+        '<div class="rank mono">#' + rank + '</div>' +
+        '<div class="info"></div>' +
+        '<div class="amt mono"></div>' +
+        '<button type="button" class="outbid-btn" data-name="">Outbid</button>';
+      var info = row.querySelector('.info');
+      var a = document.createElement('a');
+      a.href = b.url; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+      a.textContent = b.name;
+      var urlSpan = document.createElement('span');
+      urlSpan.className = 'url';
+      urlSpan.textContent = safeHost(b.url);
+      info.appendChild(a);
+      info.appendChild(urlSpan);
+      row.querySelector('.amt').textContent = fmt(b.amount);
+      var btn = row.querySelector('.outbid-btn');
+      btn.addEventListener('click', function(){
+        document.getElementById('f-name').value = '';
+        document.getElementById('f-url').value = '';
+        document.getElementById('f-amount').value = String(b.amount + 1);
+        document.getElementById('claim').scrollIntoView({behavior:'smooth'});
+        document.getElementById('f-name').focus();
+      });
+      listEl.appendChild(row);
+    });
+
+    state.freshId = null;
+  }
+
+  function refresh(){
+    return loadBids().then(function(bids){
+      state.bids = bids;
+      render();
+      updateModeUI();
+    });
+  }
+
+  function updateModeUI(){
+    var btn = document.getElementById('submit-btn');
+    var notice = document.getElementById('mode-notice');
+    if (LIVE){
+      btn.textContent = 'Continue to payment';
+      if (notice) notice.textContent = 'Live — payments run through Stripe Checkout. Bids publish once payment is confirmed.';
+    } else {
+      btn.textContent = 'Review bid';
+      if (notice) notice.textContent = 'Demo build — payment confirmation on this page is simulated, no card is charged. Deploy with the included /api backend and your own Stripe keys to take real payments.';
+    }
+  }
+
+  document.getElementById('tab-today').addEventListener('click', function(){
+    state.range = 'today';
+    this.setAttribute('aria-pressed','true');
+    document.getElementById('tab-all').setAttribute('aria-pressed','false');
+    render();
+  });
+  document.getElementById('tab-all').addEventListener('click', function(){
+    state.range = 'all';
+    this.setAttribute('aria-pressed','true');
+    document.getElementById('tab-today').setAttribute('aria-pressed','false');
+    render();
+  });
+
+  var form = document.getElementById('bid-form');
+  var pending = null;
+
+  function validate(){
+    var ok = true;
+    var name = document.getElementById('f-name').value.trim();
+    var url = document.getElementById('f-url').value.trim();
+    var amount = parseFloat(document.getElementById('f-amount').value);
+
+    var errName = document.getElementById('err-name');
+    var errUrl = document.getElementById('err-url');
+    var errAmount = document.getElementById('err-amount');
+    errName.style.display = errUrl.style.display = errAmount.style.display = 'none';
+
+    if (!name){ errName.style.display = 'block'; ok = false; }
+    var validUrl = false;
+    try { var u = new URL(url); validUrl = (u.protocol === 'https:' || u.protocol === 'http:'); } catch(e){ validUrl = false; }
+    if (!validUrl){ errUrl.style.display = 'block'; ok = false; }
+    if (!(amount >= 5)){ errAmount.style.display = 'block'; ok = false; }
+
+    if (ok) pending = { name: name.slice(0,60), url: url, amount: Math.round(amount) };
+    return ok;
+  }
+
+  var submitBtn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if (!validate()) return;
+
+    if (LIVE){
+      // Real flow: ask our backend to open a Stripe Checkout session, then
+      // hand the browser off to Stripe's own hosted payment page. The bid
+      // only gets published after Stripe confirms payment via webhook.
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Taking you to checkout…';
+      fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pending)
+      })
+        .then(function(r){ if (!r.ok) throw new Error('checkout failed'); return r.json(); })
+        .then(function(data){
+          if (!data.url) throw new Error('no checkout url');
+          window.location.href = data.url;
+        })
+        .catch(function(){
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Review bid';
+          showToast('Could not start checkout — try again in a moment.');
+        });
+      return;
+    }
+
+    // Demo flow (no backend deployed): simulate the pay step locally.
+    document.getElementById('m-name').textContent = pending.name;
+    document.getElementById('m-url').textContent = safeHost(pending.url);
+    document.getElementById('m-amount').textContent = fmt(pending.amount);
+    document.getElementById('modal-backdrop').classList.add('open');
+  });
+
+  document.getElementById('modal-cancel').addEventListener('click', function(){
+    document.getElementById('modal-backdrop').classList.remove('open');
+  });
+
+  document.getElementById('modal-confirm').addEventListener('click', function(){
+    if (!pending) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Publishing…';
+    var bid = { id: uid(), name: pending.name, url: pending.url, amount: pending.amount, ts: Date.now() };
+    state.bids.push(bid);
+    saveBidsDemo(state.bids).then(function(){
+      state.freshId = bid.id;
+      document.getElementById('modal-backdrop').classList.remove('open');
+      btn.disabled = false;
+      btn.textContent = 'Pay & publish';
+      form.reset();
+      render();
+      showToast('Bid published — you\'re on the board. (demo, no real charge)');
+      document.getElementById('board').scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  // Handle the return trip from Stripe Checkout, and poll briefly since the
+  // webhook that actually publishes the bid lands a moment after redirect.
+  function handleReturnFromStripe(){
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('paid') === '1'){
+      showToast('Payment received — publishing your bid…');
+      var tries = 0;
+      var poll = setInterval(function(){
+        tries++;
+        refresh();
+        if (tries >= 6) clearInterval(poll); // ~12s of polling, then give up quietly
+      }, 2000);
+      history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('canceled') === '1'){
+      showToast('Checkout canceled — no charge was made.');
+      history.replaceState({}, '', window.location.pathname);
+    }
+  }
+
+  refresh();
+  handleReturnFromStripe();
+})();
+</script>
+
+</body>
+</html>
